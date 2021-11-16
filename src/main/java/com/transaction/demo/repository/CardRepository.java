@@ -11,5 +11,8 @@ public interface CardRepository extends JpaRepository<Card, Long>{
 	
 	@Query(value = "SELECT * FROM cards WHERE id_user = :id", nativeQuery = true)
 	List<Card> findCardsByUserId(Long id);
+	
+	@Query(value = "DELETE FROM cards WHERE id_user = :id", nativeQuery = true)
+	Boolean deleteCardsByUserId(Long id);
 
 }

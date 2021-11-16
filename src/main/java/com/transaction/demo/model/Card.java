@@ -1,14 +1,10 @@
 package com.transaction.demo.model;
 
-import java.util.Date;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 @Entity
@@ -17,7 +13,7 @@ public class Card {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private long id;
+	private Long id;
 	
 	@Column(name = "name")
 	private String name;
@@ -28,17 +24,19 @@ public class Card {
 	@Column(name = "id_user")
 	private Long idUser;
 	
+	@Column(name = "short_name")
+	private String shortNumber;
+	
 	public Card() {
 		
 	}
 	
-	
-	public Card(String name, String numberCard, Long idUser) {
+	public Card(String name, String numberCard, Long idUser, String shortNumber) {
 		this.name = name;
 		this.numberCard = numberCard;
 		this.idUser = idUser;
+		this.shortNumber = shortNumber;
 	}
-
 
 	public Long getId() {
 		return id;
@@ -66,6 +64,15 @@ public class Card {
 	public void setUser(Long idUser) {
 		this.idUser = idUser;
 	}
+
+	public String getShortNumber() {
+		return shortNumber;
+	}
+
+	public void setShortNumber(String shortNumber) {
+		this.shortNumber = shortNumber;
+	}
+	
 	
 	
 }

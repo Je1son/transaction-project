@@ -23,63 +23,96 @@ import com.transaction.demo.model.User;
 import com.transaction.demo.repository.CardRepository;
 import com.transaction.demo.repository.UserRepository;
 
+import com.transaction.demo.EncryptMethod;
+
+//Indiciamos que es un controlador rest
 @RestController
-@RequestMapping("/api/v1/")
+@RequestMapping("/api/v1/") // La raiz de la url, es decir http://localhost:8080/api/v1/
 public class CardController {
 
+	// Inyectamos el servicio de Card para su uso
 	@Autowired
 	private CardRepository cardRepository;
-	
+
+	// Inyectamos el servicio de User para su uso
 	@Autowired
 	private UserRepository userRepository;
-	
-	//Listar trajetas por usuario
-		@GetMapping("/user/{id}/card")
-		public List<Card> getAllCards(@PathVariable(value = "id") Long id) throws ResourceNotFoundException {
-			
-			User user = userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("" + id));
-			
-			return this.cardRepository.findCardsByUserId(id);
-		}
-		
-		//Crear tarjetas
-		@PostMapping("/user/{id}/card")
-		public Card createCard(@PathVariable(value = "id") Long id, @RequestBody Card card) throws ResourceNotFoundException {
-			
-			User user = userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("" + id));
-			
-			card.setUser(user.getId());
-			
-			return this.cardRepository.save(card);
-		}
-		
-		//Actualziar tarjetas
-		@PutMapping("/user/{id_user}/card/{id}")
-		public ResponseEntity<Card> updateCard(@PathVariable(value = "id_user") Long id_user, @PathVariable(value = "id") Long id, @Valid @RequestBody Card CardDetails) throws ResourceNotFoundException{
-			
-			User user = userRepository.findById(id_user).orElseThrow(() -> new ResourceNotFoundException("" + id_user));
-			
-			Card Card = cardRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("" + id));
-			
-			Card.setName(CardDetails.getName());
-			Card.setNumberCard(CardDetails.getNumberCard());
-			Card.setUser(user.getId());
-			
-			return ResponseEntity.ok(this.cardRepository.save(Card));
 
-		}
+	// Metodo para listar todas las tarjetas de un usuario mediante el metodo GET
+	// como se muestra (http://localhost:8080/api/v1/user/id*/card)
+	@GetMapping("/user/{id}/card")
+	public List<Card> getAllCards(@PathVariable(value = "id") Long id) throws ResourceNotFoundException {
+
+		// Validamos si existe un usuario con el id enviado
+		User user = userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("" + id));
+
+		// Retorna el listado de tarjetas de x usuario
+		return this.cardRepository.findCardsByUserId(id);
+	}
+
+	// Metodo para crear una nueva tarjeta de un usuario mediante el metodo POST
+	// como se muestra (http://localhost:8080/api/v1/user/id*/card)
+	@PostMapping("/user/{id}/card")
+	public Card createCard(@PathVariable(value = "id") Long id, @RequestBody Card card) throws Exception {
+
+		// Validamos si existe un usuario con el id enviado
+		User user = userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("" + id));
+
+		// Se instancia la clase que nos ayudara a encriptar el numero de la tarjeta
+		// agregada por el usuario
+		EncryptMethod aes = new EncryptMethod();
+		aes.init();
+
+		// Agregamos los datos restantes para el objeto Tarjeta
+		card.setUser(user.getId());
+		card.setShortNumber(card.getNumberCard().substring(0, 4));
+		card.setNumberCard(aes.encrypt(card.getNumberCard()));
+
+		// Indicamos la creacion de la nueva tarjeta
+		return this.cardRepository.save(card);
+	}
+
+	// Metodo para actualizar una tarjeta de un usuario mediante el metodo PUT
+	// como se muestra (http://localhost:8080/api/v1/user/idUser*/card/idCard*)
+	@PutMapping("/user/{id_user}/card/{id}")
+	public ResponseEntity<Card> updateCard(@PathVariable(value = "id_user") Long id_user,
+			@PathVariable(value = "id") Long id, @Valid @RequestBody Card cardDetails) throws Exception {
+
+		// Validamos si existe una tarjeta con el id enviado
+		Card card = cardRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("" + id));
+
+		// Se instancia la clase que nos ayudara a encriptar el numero de la tarjeta
+		// agregada por el usuario
+		EncryptMethod aes = new EncryptMethod();
+		aes.init();
+
+		// Agregamos los datos restantes para el objeto Tarjeta
+		card.setName(cardDetails.getName());
+		card.setShortNumber(card.getNumberCard().substring(0, 4));
+		card.setNumberCard(aes.encrypt(card.getNumberCard()));
+		card.setUser(id);
+
+		// Indicamos la actualizacion de la tarjeta
+		return ResponseEntity.ok(this.cardRepository.save(card));
+
+	}
+
+	// Metodo para eliminar una tarjeta de un usuario mediante el metodo DELETE
+	// como se muestra (http://localhost:8080/api/v1/card/id*
+	@DeleteMapping("/card/{id}")
+	public Map<String, Boolean> deleteCard(@PathVariable(value = "id") Long id) throws ResourceNotFoundException {
 		
-		//Eliminar usuarios
-		@DeleteMapping("/card/{id}")
-		public Map<String, Boolean> deleteCard(@PathVariable(value = "id") Long id) throws ResourceNotFoundException{
-			Card Card = cardRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("" + id));
-			this.cardRepository.delete(Card);
-			
-			Map<String, Boolean> response = new HashMap<>();
-			response.put("deleted", Boolean.TRUE);
-			
-			return response;
-			
-		}
-	
+		// Validamos si existe una tarjeta con el id enviado
+		Card Card = cardRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("" + id));
+		
+		// Indicamos la eliminacion de la tarjeta
+		this.cardRepository.delete(Card);
+
+		Map<String, Boolean> response = new HashMap<>();
+		response.put("deleted", Boolean.TRUE);
+		//Retornamos el resultado de dicha eliminacion
+		return response;
+
+	}
+
 }
